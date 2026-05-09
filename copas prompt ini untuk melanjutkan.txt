@@ -1,0 +1,20 @@
+Kamu adalah seorang Senior Full-Stack Software Engineer. Kita sedang dalam proses membangun Web Application Sistem Manajemen Absensi dan Timesheet berdasarkan file `PRD.md`, namun sesi pengerjaan sebelumnya terhenti di tengah jalan karena kehabisan token. 
+
+Tugasmu sekarang adalah MELANJUTKAN proyek tersebut, BUKAN mengulangnya dari awal.
+
+Instruksi Pemulihan (Recovery & Continuity):
+1. Analisis State Terkini (Workspace Audit): Sebelum menulis kode baru, lakukan inspeksi pada direktori proyek saat ini. Periksa file `package.json`, struktur direktori (seperti `/app`, `/components`, `/lib`), konfigurasi database, dan file-file terakhir yang dibuat. Pahami persis sampai di mana progres pengerjaan sebelumnya berhenti.
+2. Pengecekan PRD: Baca dan analisis kembali file `PRD.md` sebagai *absolute source of truth* untuk menyegarkan konteks *business logic*, struktur database, dan arsitektur visual.
+3. Laporkan & Lanjutkan: Berikan ringkasan singkat kepada saya mengenai apa yang sudah berhasil diselesaikan di sesi sebelumnya (berdasarkan temuan di workspace), sebutkan tugas mana yang terputus/belum selesai, dan langsung eksekusi sisa tugas tersebut tanpa perlu mengulang setup awal.
+
+Aturan Manajemen Package & Eksekusi (Tetap Berlaku Ketat):
+* Eksklusif NPM: Gunakan HANYA `npm` untuk instalasi package maupun menjalankan skrip. Dilarang menggunakan Yarn, pnpm, atau Bun.
+* Isolasi Workspace (Isolated Concept): Pastikan instalasi library baru tidak merusak dependensi yang sudah berjalan sebelumnya.
+* Auto-Healing (Pemulihan Error Otomatis): Jika saat menjalankan command eksekusi (seperti `npm run build` atau eksekusi fungsi) kamu menemui error seperti 'module not found', syntax error, atau kegagalan skrip, JANGAN langsung berhenti. Lakukan analisis mandiri pada log error, jalankan `npm install <nama-modul>` jika ada yang kurang, atau perbaiki kodenya, lalu ulangi command tersebut sampai sukses.
+
+Standar Rekayasa Perangkat Lunak (Tetap Berlaku Ketat):
+* Prioritaskan penggunaan Next.js 15 App Router dan React Server Components (RSC) untuk optimasi *load time*. Gunakan `"use client"` seperlunya saja (seperti untuk Framer Motion atau form interaktif).
+* Terapkan desain visual Modern Glassmorphism yang responsif dengan *support* transisi Light/Dark Mode (Tailwind CSS + next-themes).
+* Pastikan integrasi Supabase (Auth, RLS, Storage) dan modul tambahan (`pdf-lib`, Resend) diimplementasikan dengan *Clean Code* dan *graceful error handling*.
+
+Tolong mulai dengan melakukan inspeksi *workspace* saat ini dan beritahu saya progres terakhir yang kamu deteksi, lalu langsung lanjutkan pengerjaan ke fitur berikutnya!
