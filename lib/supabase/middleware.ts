@@ -35,7 +35,6 @@ export async function updateSession(request: NextRequest) {
   // Public routes — no auth required
   const publicRoutes = ['/login', '/auth/callback']
   if (publicRoutes.some((r) => pathname.startsWith(r))) {
-    // If already logged in, redirect away from login
     if (user && pathname === '/login') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
@@ -47,19 +46,31 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Change-password page is accessible without further checks
+  if (pathname.startsWith('/change-password')) {
+    return supabaseResponse
+  }
+
+  // Check must_change_password flag
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('role, must_change_password')
+    .eq('id', user.id)
+    .single()
+
+  const profile = profileData as { role: string; must_change_password: boolean } | null
+
+  if (profile?.must_change_password === true) {
+    return NextResponse.redirect(new URL('/change-password', request.url))
+  }
+
   // Admin routes — check role
   if (pathname.startsWith('/admin')) {
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    const profile = profileData as { role: string } | null
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !['admin', 'Admin'].includes(profile.role)) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
 
   return supabaseResponse
 }
+

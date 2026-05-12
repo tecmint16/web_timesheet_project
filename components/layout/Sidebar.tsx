@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Clock, CalendarDays, History,
   ChevronLeft, ChevronRight, LogOut, Settings,
-  ShieldCheck, BarChart3, CheckSquare, Database, FileEdit,
+  ShieldCheck, BarChart3, CheckSquare, Database, FileEdit, Users,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 import type { Profile } from '@/types/database.types'
@@ -27,6 +27,7 @@ const userNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   { href: '/admin/dashboard',    label: 'Monitoring',      icon: <BarChart3 size={18} /> },
+  { href: '/admin/users',        label: 'Manajemen User',  icon: <Users size={18} /> },
   { href: '/admin/leave-verify', label: 'Verifikasi Cuti', icon: <CheckSquare size={18} /> },
   { href: '/admin/master-data',  label: 'Master Data',     icon: <Database size={18} /> },
   { href: '/admin/pdf-editor',   label: 'PDF Editor',      icon: <FileEdit size={18} /> },
@@ -39,7 +40,7 @@ interface SidebarProps {
 export function Sidebar({ profile }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
-  const isAdmin = profile.role === 'admin'
+  const isAdmin = ['admin', 'Admin'].includes(profile.role)
   const navItems = isAdmin ? adminNavItems : userNavItems
 
   return (

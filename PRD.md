@@ -3,102 +3,108 @@
 **Platform:** Web Application
 **Tech Stack:** Next.js 15 (App Router, RSC), Tailwind CSS, Framer Motion, Supabase
 
+## [UPDATE V1.1] - Fitur Baru & Perbaikan Database
+Iterasi ini berfokus pada perombakan struktur data Master, penambahan sistem *User Management* yang komprehensif dari sisi Admin, serta modifikasi *logic* input timesheet pada sisi User.
+1. **New Feature (Admin):** Modul "Add User" dengan penugasan spesifik hingga level aplikasi.
+2. **New Feature (User):** Wajib ubah *password* saat *login* pertama kali.
+3. **Database Update:** Normalisasi tabel `master_projects` dipecah menjadi tabel `projects`, `clusters`, dan `applications`. Tabel `timesheets` dimodifikasi agar mendukung *multi-select* aplikasi.
+
+---
+
 ## 1. Pendahuluan
-Aplikasi ini adalah sistem manajemen kehadiran dan pelaporan aktivitas harian yang dirancang untuk menggantikan pencatatan manual (Excel). Sistem ini dilengkapi dengan portal karyawan untuk pengisian *timesheet* dan pengajuan cuti, serta portal Admin untuk *monitoring*, manajemen data master, dan verifikasi dokumen dengan alur kerja hibrida (digital-manual).
+Aplikasi ini adalah sistem manajemen kehadiran dan pelaporan aktivitas harian yang dirancang untuk menggantikan pencatatan manual. Sistem dilengkapi portal karyawan (untuk timesheet & cuti) dan portal Admin (untuk monitoring, manajemen user, dan data master hierarkis).
 
-## 2. Manajemen Pengguna & Autentikasi (Saran Mapping Identitas)
+## 2. Manajemen Pengguna & Autentikasi
 Sistem menggunakan autentikasi standar (Email & Password) dari Supabase Auth.
-
-**Solusi Mapping Identitas:**
-Karena ini adalah sistem internal perusahaan, cara terbaik untuk memetakan identitas adalah memisahkan data autentikasi (Supabase `auth.users`) dengan profil data pegawai (tabel `public.profiles`). 
-*   **Alur:** Admin membuatkan akun (Email/Password) untuk pegawai baru. Saat akun terbuat, sebuah *Trigger* di PostgreSQL akan otomatis membuat baris baru di tabel `public.profiles` dengan `id` yang sama persis (UUID) dengan tabel `auth.users`. Setelah itu, Admin bisa melengkapi data spesifik seperti NPP, Nama Lengkap, dan Divisi. 
+* **Alur Pembuatan Akun:** Admin yang membuatkan akun (Email/Password) untuk pegawai baru melalui menu Add User.
+* **Force Password Change:** Saat akun baru berhasil *login* dengan *password default* yang diberikan Admin, sistem akan mendeteksi *flag* dan memaksa (me-rute ulang) pengguna ke halaman **Ubah Password** sebelum mereka dapat mengakses Dashboard.
+* **Mapping Identitas:** Data autentikasi (`auth.users`) terhubung 1-to-1 dengan tabel `public.profiles`.
 
 ## 3. Hak Akses & Batasan (Roles)
-Sistem membagi pengguna ke dalam dua *role* utama yang diatur secara ketat menggunakan Supabase **Row Level Security (RLS)**.
+Sistem membagi pengguna ke dalam tiga *role* utama menggunakan Supabase **Row Level Security (RLS)**.
 
 | Role | Deskripsi & Batasan Akses |
 | :--- | :--- |
-| **User (Pegawai)** | Hanya dapat melakukan operasi (SELECT, INSERT, UPDATE, DELETE) pada datanya sendiri berdasarkan `auth.uid()`. Tidak dapat mengakses rute halaman `/admin`. |
-| **Admin (HR/Manajer)** | Memiliki hak akses penuh untuk melakukan *read* pada semua tabel *timesheet* dan cuti, serta *write* pada tabel data master dan persetujuan cuti. |
+| **User (PM / Staff)** | Hanya dapat melakukan operasi pada datanya sendiri berdasarkan `auth.uid()`. Data Project dan Cluster bersifat *Read-Only* (otomatis terikat dari profil). |
+| **Admin (HR / Manajer)** | Akses penuh (*Full CRUD*) terhadap seluruh data transaksi (timesheet, cuti), Manajemen User, dan Master Data. |
 
 ## 4. Spesifikasi Fitur Utama
 
-### A. Portal User (Pegawai)
-1. **Dashboard Pribadi:** Menampilkan ringkasan sisa cuti, total jam kerja minggu berjalan, status pengajuan terbaru, dan pengumuman internal.
+### A. Portal Admin (HR/Manajer)
+1. **User Management (Add User):**
+   * Admin dapat membuat user baru dengan mengisi: Email, NPP, Nama Lengkap, Password, No Telepon, Alamat Tempat Tinggal, dan Role (Admin/PM/Staff).
+   * **Penugasan Proyek:** * Admin memilih **Kode Proyek** (Hanya 1 proyek).
+       * Berdasarkan Proyek, Admin memilih **Nama Cluster** (Hanya 1 cluster).
+       * Berdasarkan Cluster, Admin memilih **Aplikasi** (Bisa *multi-select* / lebih dari 1).
+2. **Manajemen Project:**
+   * Admin dapat menginput Kode Project, Nama Project, dan Cluster.
+   * *Logic*: Satu Project dapat menampung banyak Cluster (1-to-Many).
+3. **Manajemen Aplikasi:**
+   * Admin dapat menginput Kode Aplikasi, Cluster Induk, dan Nama Aplikasi.
+   * *Logic*: Satu Cluster dapat menampung banyak Aplikasi (1-to-Many).
+4. **Monitoring & Verifikasi:** Dashboard analitik dan persetujuan/penolakan dokumen cuti berbasis PDF basah.
+
+### B. Portal User (Pegawai)
+1. **Ubah Password Wajib:** Form interaktif yang mencegat pengguna baru agar memperbarui *password* mereka.
 2. **Manajemen Timesheet (Laporan Harian):**
-   *   **Input Data:** Tanggal, Shifting, Jam Masuk, Jam Pulang, Project, Project Code, Cluster, Aplikasi, dan Kegiatan/Deskripsi.
-   *   **Soft Warning Jam Kerja:** Jika selisih Jam Pulang dan Jam Masuk < 8 jam, sistem tidak akan memblokir (*hard block*), tetapi akan memunculkan peringatan visual merah (*soft warning*) dan **mewajibkan** pengguna mengisi kolom tambahan: "Alasan/Keterangan Kekurangan Jam".
-   *   **Fleksibilitas Edit:** Tidak ada batas waktu (*cut-off*) pengisian. Pegawai dapat menambah atau mengedit entri kapan saja sebelum data ditarik/dikunci oleh Admin untuk rekap bulanan.
-3. **Sistem Pengajuan Cuti Hibrida:**
-   *   **Form Digital:** Memasukkan Jenis Cuti, Tahun, Total Hari, Rentang Tanggal, Alamat & No. Telp Cuti, dan Keterangan.
-   *   **Auto-fill PDF:** Sistem menghasilkan dokumen PDF yang sudah terisi otomatis (Nama, NPP, detail cuti) siap cetak.
-   *   **Upload Scan:** Pegawai mengunggah kembali PDF yang sudah ditandatangani basah oleh atasan (*Max upload size: 5MB*, format PDF/JPG/PNG).
-4. **Riwayat:** Melihat rekap *timesheet* dan status dokumen cuti.
+   * **Input User:** Tanggal, Jadwal Shift, Jam Masuk, Jam Pulang, Status Kehadiran, dan Kegiatan/Deskripsi.
+   * **Auto-Populated (View-Only):** Kode Proyek, Nama Proyek, dan Cluster otomatis terisi berdasarkan profil user dan **tidak dapat diedit**.
+   * **Multi-Select Aplikasi:** User dapat memilih 1 atau lebih aplikasi (hanya menampilkan daftar aplikasi yang sudah di-*assign* oleh Admin ke akun mereka).
+   * **Soft Warning Jam Kerja:** Jika kerja < 8 jam, sistem memunculkan field "Alasan Kekurangan Jam" (wajib diisi).
+3. **Sistem Pengajuan Cuti Hibrida:** Pengajuan *form digital*, *auto-fill* PDF, cetak & TTD basah, lalu *upload scan*.
 
-### B. Portal Admin (HR/Manajer)
-1. **Monitoring Dashboard:** Visualisasi grafik batang untuk tren shifting pegawai dan diagram lingkaran untuk metrik alokasi waktu pengerjaan aplikasi.
-2. **Verifikasi Cuti:** Antrean dokumen cuti (*Signed Scan Upload*) yang menunggu persetujuan. Terdapat aksi **Approve** dan **Reject**.
-3. **Notifikasi Otomatis:** Saat pegawai mengunggah dokumen scan bertanda tangan, sistem akan langsung mengirimkan *Email Notifikasi* ke tim Admin.
-4. **Master Data Management:** Admin dapat melakukan operasi CRUD untuk daftar proyek, kode proyek, cluster, dan aplikasi.
-5. **PDF Layout Editor:** Antarmuka untuk mengatur letak teks, koordinat (*X/Y axis*), dan variabel pada *template* dokumen (seperti SDD-FM-HRD) yang akan di-*generate* oleh pengguna.
+---
 
-## 5. Arsitektur Teknis & Rekomendasi Library
+## 5. Pemodelan Data / Skema Database (Supabase PostgreSQL)
 
-*   **Frontend & UI Framework:** Next.js 15 (App Router, Server Actions), React Server Components (RSC) untuk efisiensi *load time*. Tailwind CSS dipadukan dengan `next-themes` untuk transisi Light/Dark Mode. Framer Motion untuk animasi mulus (misal: transisi modal, *loading states*, dan notifikasi).
-*   **Gaya Visual:** Modern Glassmorphism (penggunaan utilitas `backdrop-blur` pada Tailwind). Light mode menggunakan palet warna *vibrant* (gradasi biru/ungu), Dark mode menggunakan `bg-slate-950` dengan elemen kaca gelap (`bg-black/30`).
-*   **Database & Backend:** Supabase (PostgreSQL, GoTrue Auth, Storage untuk file PDF/Scan).
-*   **Library Engine PDF (Rekomendasi AI):**
-    *   Gunakan `pdf-lib` (berjalan di Server/Edge). Sangat handal untuk membaca *template* PDF kosong yang sudah ada (misal: form asli HRD), lalu mengisi teks pada koordinat tertentu sesuai koordinat dari PDF Layout Editor Admin.
-*   **Library Email Engine (Rekomendasi AI):**
-    *   Gunakan integrasi **Resend API** yang dieksekusi di dalam **Supabase Edge Functions**. *Trigger* otomatis menyala saat ada baris baru di tabel cuti dengan status `pending_upload`.
+Berikut adalah desain *Entity-Relationship* yang sudah dinormalisasi untuk mendukung pemetaan hierarki Proyek -> Cluster -> Aplikasi.
 
-## 6. Pemodelan Data / Skema Database (Supabase PostgreSQL)
+**1. Tabel Master (Data Referensi)**
+* **`projects`**
+    * `id` (UUID, PK)
+    * `project_code` (Varchar, Unique)
+    * `project_name` (Varchar)
+* **`clusters`**
+    * `id` (UUID, PK)
+    * `project_id` (UUID, FK -> `projects.id`)
+    * `cluster_name` (Varchar)
+* **`applications`**
+    * `id` (UUID, PK)
+    * `cluster_id` (UUID, FK -> `clusters.id`)
+    * `app_code` (Varchar, Unique)
+    * `app_name` (Varchar)
 
-Berikut adalah desain *Entity-Relationship* yang mendukung efisiensi kueri dan *Clean Architecture*.
+**2. Tabel `profiles` & Relasi User**
+* **`profiles`**
+    * `id` (UUID, PK, FK -> `auth.users.id`)
+    * `npp` (Varchar, Unique)
+    * `full_name` (Varchar)
+    * `phone_number` (Varchar)
+    * `address` (Text)
+    * `role` (Enum: 'Admin', 'PM', 'Staff')
+    * `project_id` (UUID, FK -> `projects.id`)
+    * `cluster_id` (UUID, FK -> `clusters.id`)
+    * `must_change_password` (Boolean, Default: true)
+    * `leave_balance` (Int, Default: 12)
+    * `created_at` (Timestamp)
+* **`profile_applications` (Junction Table untuk Multi-Select App)**
+    * `profile_id` (UUID, FK -> `profiles.id`)
+    * `application_id` (UUID, FK -> `applications.id`)
+    * `Primary Key` (profile_id, application_id)
 
-**1. Tabel `profiles`**
-*Menyimpan informasi identitas pegawai, terhubung 1-to-1 dengan Supabase Auth.*
-*   `id` (UUID, Primary Key, Foreign Key -> `auth.users.id`)
-*   `npp` (Varchar, Unique)
-*   `full_name` (Varchar)
-*   `role` (Enum: 'user', 'admin')
-*   `leave_balance` (Int, Default: 12)
-*   `created_at` (Timestamp)
-
-**2. Tabel `master_projects`**
-*Menyimpan data referensi proyek yang dikelola admin agar input dropdown konsisten.*
-*   `id` (UUID, Primary Key)
-*   `project_name` (Varchar)
-*   `project_code` (Varchar, Unique)
-*   `cluster_name` (Varchar)
-*   `app_name` (Varchar)
-*   `is_active` (Boolean, Default: true)
-
-**3. Tabel `timesheets`**
-*Menyimpan data log harian pegawai.*
-*   `id` (UUID, Primary Key)
-*   `profile_id` (UUID, Foreign Key -> `profiles.id`)
-*   `log_date` (Date)
-*   `shift_type` (Enum: 'Morning', 'Evening', dll)
-*   `time_in` (Time)
-*   `time_out` (Time)
-*   `status` (Enum: 'Hadir', 'Izin', 'Sakit', 'Lembur')
-*   `project_id` (UUID, Foreign Key -> `master_projects.id`)
-*   `activity_desc` (Text)
-*   `short_hours_reason` (Text, *Nullable* - Diisi wajib jika waktu kerja < 8 jam)
-*   `is_locked` (Boolean, Default: false - Diubah menjadi true oleh Admin saat rekap bulanan)
-
-**4. Tabel `leave_requests`**
-*Menyimpan alur proses cuti hibrida.*
-*   `id` (UUID, Primary Key)
-*   `profile_id` (UUID, Foreign Key -> `profiles.id`)
-*   `leave_type` (Enum: 'Tahunan', 'Melahirkan', 'Khusus')
-*   `start_date` (Date)
-*   `end_date` (Date)
-*   `total_days` (Int)
-*   `address_phone_during_leave` (Varchar)
-*   `description` (Text)
-*   `pdf_generated_url` (Varchar, *Nullable*)
-*   `signed_scan_url` (Varchar, *Nullable* - Path di Supabase Storage)
-*   `status` (Enum: 'Draft', 'Pending_Approval', 'Approved', 'Rejected')
-*   `created_at` (Timestamp)
+**3. Tabel Transaksional**
+* **`timesheets`**
+    * `id` (UUID, PK)
+    * `profile_id` (UUID, FK -> `profiles.id`)
+    * `log_date` (Date)
+    * `shift_type` (Varchar)
+    * `time_in` (Time)
+    * `time_out` (Time)
+    * `status` (Enum: 'Hadir', 'Izin', 'Sakit', 'Lembur')
+    * `activity_desc` (Text)
+    * `short_hours_reason` (Text, Nullable)
+* **`timesheet_applications` (Junction Table karena 1 timesheet bisa mencakup > 1 app)**
+    * `timesheet_id` (UUID, FK -> `timesheets.id`)
+    * `application_id` (UUID, FK -> `applications.id`)
+* **`leave_requests`**
+    * `(Struktur sama dengan V1)`

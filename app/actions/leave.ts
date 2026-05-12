@@ -39,7 +39,7 @@ export async function submitLeaveRequest(
   const total_days = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
   // Use admin client for write operations to bypass strict enum typing
-  const db = await createAdminClient() as any
+  const db = createAdminClient() as any
 
   const { data: leaveRecord, error: insertError } = await db
     .from('leave_requests')
@@ -141,7 +141,7 @@ export async function uploadSignedScan(
     .getPublicUrl(filePath)
 
   // Update status to Pending_Approval using admin client
-  const db = await createAdminClient() as any
+  const db = createAdminClient() as any
   const { error: updateError } = await db
     .from('leave_requests')
     .update({

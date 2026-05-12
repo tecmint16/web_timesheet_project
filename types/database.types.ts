@@ -14,7 +14,12 @@ export type Database = {
           id: string
           npp: string | null
           full_name: string | null
-          role: 'user' | 'admin'
+          phone_number: string | null
+          address: string | null
+          role: 'admin' | 'user' | 'Admin' | 'PM' | 'Staff'
+          project_id: string | null
+          cluster_id: string | null
+          must_change_password: boolean
           leave_balance: number
           created_at: string
         }
@@ -22,7 +27,12 @@ export type Database = {
           id: string
           npp?: string | null
           full_name?: string | null
-          role?: 'user' | 'admin'
+          phone_number?: string | null
+          address?: string | null
+          role?: 'admin' | 'user' | 'Admin' | 'PM' | 'Staff'
+          project_id?: string | null
+          cluster_id?: string | null
+          must_change_password?: boolean
           leave_balance?: number
           created_at?: string
         }
@@ -30,35 +40,91 @@ export type Database = {
           id?: string
           npp?: string | null
           full_name?: string | null
-          role?: 'user' | 'admin'
+          phone_number?: string | null
+          address?: string | null
+          role?: 'admin' | 'user' | 'Admin' | 'PM' | 'Staff'
+          project_id?: string | null
+          cluster_id?: string | null
+          must_change_password?: boolean
           leave_balance?: number
           created_at?: string
         }
       }
-      master_projects: {
+      projects: {
         Row: {
           id: string
-          project_name: string
           project_code: string
-          cluster_name: string
-          app_name: string
-          is_active: boolean
+          project_name: string
+          created_at: string
         }
         Insert: {
           id?: string
-          project_name: string
           project_code: string
-          cluster_name: string
-          app_name: string
-          is_active?: boolean
+          project_name: string
+          created_at?: string
         }
         Update: {
           id?: string
-          project_name?: string
           project_code?: string
+          project_name?: string
+          created_at?: string
+        }
+      }
+      clusters: {
+        Row: {
+          id: string
+          project_id: string
+          cluster_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          cluster_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
           cluster_name?: string
+          created_at?: string
+        }
+      }
+      applications: {
+        Row: {
+          id: string
+          cluster_id: string
+          app_code: string
+          app_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          cluster_id: string
+          app_code: string
+          app_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          cluster_id?: string
+          app_code?: string
           app_name?: string
-          is_active?: boolean
+          created_at?: string
+        }
+      }
+      profile_applications: {
+        Row: {
+          profile_id: string
+          application_id: string
+        }
+        Insert: {
+          profile_id: string
+          application_id: string
+        }
+        Update: {
+          profile_id?: string
+          application_id?: string
         }
       }
       timesheets: {
@@ -66,11 +132,10 @@ export type Database = {
           id: string
           profile_id: string
           log_date: string
-          shift_type: 'Morning' | 'Evening' | 'Night' | 'WFH'
+          shift_type: string
           time_in: string
           time_out: string
           status: 'Hadir' | 'Izin' | 'Sakit' | 'Lembur'
-          project_id: string | null
           activity_desc: string | null
           short_hours_reason: string | null
           is_locked: boolean
@@ -80,11 +145,10 @@ export type Database = {
           id?: string
           profile_id: string
           log_date: string
-          shift_type: 'Morning' | 'Evening' | 'Night' | 'WFH'
+          shift_type: string
           time_in: string
           time_out: string
           status?: 'Hadir' | 'Izin' | 'Sakit' | 'Lembur'
-          project_id?: string | null
           activity_desc?: string | null
           short_hours_reason?: string | null
           is_locked?: boolean
@@ -94,15 +158,28 @@ export type Database = {
           id?: string
           profile_id?: string
           log_date?: string
-          shift_type?: 'Morning' | 'Evening' | 'Night' | 'WFH'
+          shift_type?: string
           time_in?: string
           time_out?: string
           status?: 'Hadir' | 'Izin' | 'Sakit' | 'Lembur'
-          project_id?: string | null
           activity_desc?: string | null
           short_hours_reason?: string | null
           is_locked?: boolean
           created_at?: string
+        }
+      }
+      timesheet_applications: {
+        Row: {
+          timesheet_id: string
+          application_id: string
+        }
+        Insert: {
+          timesheet_id: string
+          application_id: string
+        }
+        Update: {
+          timesheet_id?: string
+          application_id?: string
         }
       }
       leave_requests: {
@@ -157,8 +234,6 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: 'user' | 'admin'
-      shift_type: 'Morning' | 'Evening' | 'Night' | 'WFH'
       attendance_status: 'Hadir' | 'Izin' | 'Sakit' | 'Lembur'
       leave_type: 'Tahunan' | 'Melahirkan' | 'Khusus'
       leave_status: 'Draft' | 'Pending_Approval' | 'Approved' | 'Rejected'
@@ -166,16 +241,47 @@ export type Database = {
   }
 }
 
-// Convenience types
+// ─── Convenience Row Types ────────────────────────────────
 export type Profile = Database['public']['Tables']['profiles']['Row']
-export type MasterProject = Database['public']['Tables']['master_projects']['Row']
+export type Project = Database['public']['Tables']['projects']['Row']
+export type Cluster = Database['public']['Tables']['clusters']['Row']
+export type Application = Database['public']['Tables']['applications']['Row']
+export type ProfileApplication = Database['public']['Tables']['profile_applications']['Row']
 export type Timesheet = Database['public']['Tables']['timesheets']['Row']
+export type TimesheetApplication = Database['public']['Tables']['timesheet_applications']['Row']
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row']
 
-export type TimesheetWithProject = Timesheet & {
-  master_projects: Pick<MasterProject, 'project_name' | 'project_code' | 'cluster_name' | 'app_name'> | null
+// ─── Joined / Composed Types ──────────────────────────────
+
+/** Cluster enriched with its parent project info */
+export type ClusterWithProject = Cluster & {
+  projects: Pick<Project, 'project_code' | 'project_name'> | null
 }
 
+/** Application enriched with its parent cluster info */
+export type ApplicationWithCluster = Application & {
+  clusters: Pick<Cluster, 'cluster_name'> & {
+    projects: Pick<Project, 'project_code' | 'project_name'> | null
+  } | null
+}
+
+/** Timesheet enriched with its applications */
+export type TimesheetWithApps = Timesheet & {
+  timesheet_applications: {
+    applications: Pick<Application, 'id' | 'app_code' | 'app_name'> | null
+  }[]
+}
+
+/** Profile enriched with its project, cluster, and assigned apps */
+export type ProfileWithAssignments = Profile & {
+  projects: Pick<Project, 'project_code' | 'project_name'> | null
+  clusters: Pick<Cluster, 'cluster_name'> | null
+  profile_applications: {
+    applications: Pick<Application, 'id' | 'app_code' | 'app_name'> | null
+  }[]
+}
+
+/** Leave request with submitter profile */
 export type LeaveRequestWithProfile = LeaveRequest & {
   profiles: Pick<Profile, 'full_name' | 'npp'> | null
 }

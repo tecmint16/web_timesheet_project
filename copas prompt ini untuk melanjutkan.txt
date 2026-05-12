@@ -1,20 +1,13 @@
-Kamu adalah seorang Senior Full-Stack Software Engineer. Kita sedang dalam proses membangun Web Application Sistem Manajemen Absensi dan Timesheet berdasarkan file `PRD.md`, namun sesi pengerjaan sebelumnya terhenti di tengah jalan karena kehabisan token. 
+Kamu adalah seorang Senior Full-Stack Software Engineer. Proyek Sistem Manajemen Absensi (V1) kita telah berhasil berjalan dengan baik. Tugasmu sekarang adalah melakukan UPDATE dan menambahkan fitur baru berdasarkan revisi terbaru pada dokumen `PRDv2.md`.
 
-Tugasmu sekarang adalah MELANJUTKAN proyek tersebut, BUKAN mengulangnya dari awal.
-
-Instruksi Pemulihan (Recovery & Continuity):
-1. Analisis State Terkini (Workspace Audit): Sebelum menulis kode baru, lakukan inspeksi pada direktori proyek saat ini. Periksa file `package.json`, struktur direktori (seperti `/app`, `/components`, `/lib`), konfigurasi database, dan file-file terakhir yang dibuat. Pahami persis sampai di mana progres pengerjaan sebelumnya berhenti.
-2. Pengecekan PRD: Baca dan analisis kembali file `PRD.md` sebagai *absolute source of truth* untuk menyegarkan konteks *business logic*, struktur database, dan arsitektur visual.
-3. Laporkan & Lanjutkan: Berikan ringkasan singkat kepada saya mengenai apa yang sudah berhasil diselesaikan di sesi sebelumnya (berdasarkan temuan di workspace), sebutkan tugas mana yang terputus/belum selesai, dan langsung eksekusi sisa tugas tersebut tanpa perlu mengulang setup awal.
+Instruksi Iterasi (Sangat Penting):
+1. BACA `PRD.md` TERBARU: Fokuskan perhatianmu pada section `[UPDATE V1.1]` atau instruksi perbaikan yang baru saja saya tambahkan.
+2. JANGAN MEMULAI DARI AWAL: Proyek ini sudah memiliki arsitektur Next.js 15, database Supabase, dan UI Tailwind yang stabil. Jangan merombak struktur folder, konfigurasi dasar, atau skema database yang tidak terkait dengan fitur baru.
+3. AUDIT SEBELUM KODING: Sebelum menulis kode baru, periksa file terkait (misalnya halaman atau komponen yang akan diedit) untuk memahami state kodenya saat ini.
+4. JAGA CLEAN CODE: Integrasikan fitur baru dengan mulus (seamless) ke dalam arsitektur yang sudah ada tanpa merusak fitur lama.
 
 Aturan Manajemen Package & Eksekusi (Tetap Berlaku Ketat):
-* Eksklusif NPM: Gunakan HANYA `npm` untuk instalasi package maupun menjalankan skrip. Dilarang menggunakan Yarn, pnpm, atau Bun.
-* Isolasi Workspace (Isolated Concept): Pastikan instalasi library baru tidak merusak dependensi yang sudah berjalan sebelumnya.
-* Auto-Healing (Pemulihan Error Otomatis): Jika saat menjalankan command eksekusi (seperti `npm run build` atau eksekusi fungsi) kamu menemui error seperti 'module not found', syntax error, atau kegagalan skrip, JANGAN langsung berhenti. Lakukan analisis mandiri pada log error, jalankan `npm install <nama-modul>` jika ada yang kurang, atau perbaiki kodenya, lalu ulangi command tersebut sampai sukses.
+* Eksklusif NPM: Gunakan HANYA `npm`. Dilarang menggunakan Yarn, pnpm, atau Bun.
+* Auto-Healing (Pemulihan Error Otomatis): Jika menemui error saat build/run, analisis log-nya, lakukan `npm install` jika ada dependensi yang kurang, atau perbaiki syntax-nya, lalu jalankan kembali secara otomatis tanpa langsung menyerah.
 
-Standar Rekayasa Perangkat Lunak (Tetap Berlaku Ketat):
-* Prioritaskan penggunaan Next.js 15 App Router dan React Server Components (RSC) untuk optimasi *load time*. Gunakan `"use client"` seperlunya saja (seperti untuk Framer Motion atau form interaktif).
-* Terapkan desain visual Modern Glassmorphism yang responsif dengan *support* transisi Light/Dark Mode (Tailwind CSS + next-themes).
-* Pastikan integrasi Supabase (Auth, RLS, Storage) dan modul tambahan (`pdf-lib`, Resend) diimplementasikan dengan *Clean Code* dan *graceful error handling*.
-
-Tolong mulai dengan melakukan inspeksi *workspace* saat ini dan beritahu saya progres terakhir yang kamu deteksi, lalu langsung lanjutkan pengerjaan ke fitur berikutnya!
+Berikan saya ringkasan singkat tentang fitur baru/bug apa yang kamu tangkap dari `PRD.md` yang baru, lalu langsung mulai eksekusi perbaikannya lapis demi lapis!
