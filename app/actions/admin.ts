@@ -240,7 +240,11 @@ export async function upsertCluster(
   _prev: { error?: string; success?: boolean },
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
-  try { await requireAdmin() } catch (e: any) { return { error: e.message } }
+  try {
+    await requireAdmin()
+  } catch (e: any) {
+    return { error: e.message }
+  }
 
   const id           = formData.get('id') as string | null
   const project_id   = formData.get('project_id') as string
@@ -248,27 +252,36 @@ export async function upsertCluster(
 
   if (!project_id || !cluster_name) return { error: 'Proyek dan Nama Cluster wajib diisi.' }
 
-  const db = createAdminClient() as any
-  let err
-  if (id) {
-    const { error } = await db.from('clusters').update({ project_id, cluster_name }).eq('id', id)
-    err = error
-  } else {
-    const { error } = await db.from('clusters').insert({ project_id, cluster_name })
-    err = error
+  try {
+    const db = createAdminClient() as any
+    let err
+    if (id) {
+      const { error } = await db.from('clusters').update({ project_id, cluster_name }).eq('id', id)
+      err = error
+    } else {
+      const { error } = await db.from('clusters').insert({ project_id, cluster_name })
+      err = error
+    }
+    if (err) return { error: `DB Error: ${err.message}` }
+    revalidatePath('/admin/master-data')
+    return { success: true }
+  } catch (e: any) {
+    console.error('[upsertCluster] Unexpected error:', e)
+    return { error: `Terjadi kesalahan: ${e?.message ?? String(e)}` }
   }
-  if (err) return { error: err.message }
-  revalidatePath('/admin/master-data')
-  return { success: true }
 }
 
 export async function deleteCluster(id: string): Promise<{ error?: string }> {
   try { await requireAdmin() } catch (e: any) { return { error: e.message } }
-  const db = createAdminClient() as any
-  const { error } = await db.from('clusters').delete().eq('id', id)
-  if (error) return { error: error.message }
-  revalidatePath('/admin/master-data')
-  return {}
+  try {
+    const db = createAdminClient() as any
+    const { error } = await db.from('clusters').delete().eq('id', id)
+    if (error) return { error: error.message }
+    revalidatePath('/admin/master-data')
+    return {}
+  } catch (e: any) {
+    return { error: `Terjadi kesalahan: ${e?.message ?? String(e)}` }
+  }
 }
 
 // ─── MASTER DATA: APPLICATIONS ────────────────────────────
@@ -277,7 +290,11 @@ export async function upsertApplication(
   _prev: { error?: string; success?: boolean },
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
-  try { await requireAdmin() } catch (e: any) { return { error: e.message } }
+  try {
+    await requireAdmin()
+  } catch (e: any) {
+    return { error: e.message }
+  }
 
   const id         = formData.get('id') as string | null
   const cluster_id = formData.get('cluster_id') as string
@@ -286,18 +303,23 @@ export async function upsertApplication(
 
   if (!cluster_id || !app_code || !app_name) return { error: 'Semua field wajib diisi.' }
 
-  const db = createAdminClient() as any
-  let err
-  if (id) {
-    const { error } = await db.from('applications').update({ cluster_id, app_code, app_name }).eq('id', id)
-    err = error
-  } else {
-    const { error } = await db.from('applications').insert({ cluster_id, app_code, app_name })
-    err = error
+  try {
+    const db = createAdminClient() as any
+    let err
+    if (id) {
+      const { error } = await db.from('applications').update({ cluster_id, app_code, app_name }).eq('id', id)
+      err = error
+    } else {
+      const { error } = await db.from('applications').insert({ cluster_id, app_code, app_name })
+      err = error
+    }
+    if (err) return { error: `DB Error: ${err.message}` }
+    revalidatePath('/admin/master-data')
+    return { success: true }
+  } catch (e: any) {
+    console.error('[upsertApplication] Unexpected error:', e)
+    return { error: `Terjadi kesalahan: ${e?.message ?? String(e)}` }
   }
-  if (err) return { error: err.message }
-  revalidatePath('/admin/master-data')
-  return { success: true }
 }
 
 export async function deleteApplication(id: string): Promise<{ error?: string }> {

@@ -46,31 +46,47 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // ─── IMPORTANT: Server Actions use POST + 'Next-Action' header ───────────
+  // Redirecting a Server Action request breaks the JSON protocol and causes
+  // "An unexpected response was received from the server" on the client.
+  // Auth is already verified above (user exists). Let actions through.
+  const isServerAction = request.method === 'POST' &&
+    request.headers.has('next-action')
+
+  if (isServerAction) {
+    return supabaseResponse
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Change-password page is accessible without further checks
   if (pathname.startsWith('/change-password')) {
     return supabaseResponse
   }
 
-  // Check must_change_password flag
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('role, must_change_password')
-    .eq('id', user.id)
-    .single()
+  // Check must_change_password flag — graceful fallback if column missing
+  try {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('role, must_change_password')
+      .eq('id', user.id)
+      .single()
 
-  const profile = profileData as { role: string; must_change_password: boolean } | null
+    const profile = profileData as { role: string; must_change_password: boolean } | null
 
-  if (profile?.must_change_password === true) {
-    return NextResponse.redirect(new URL('/change-password', request.url))
-  }
-
-  // Admin routes — check role
-  if (pathname.startsWith('/admin')) {
-    if (!profile || !['admin', 'Admin'].includes(profile.role)) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+    if (profile?.must_change_password === true) {
+      return NextResponse.redirect(new URL('/change-password', request.url))
     }
+
+    // Admin routes — check role
+    if (pathname.startsWith('/admin')) {
+      if (!profile || !['admin', 'Admin'].includes(profile.role)) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+  } catch {
+    // If the profile query fails (e.g. column not yet migrated),
+    // allow the request through — page-level guards will handle auth.
   }
 
   return supabaseResponse
 }
-
