@@ -102,13 +102,6 @@ export default async function AdminDashboardPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1200px' }}>
-      <div>
-        <h1 className="page-title">Monitoring Dashboard</h1>
-        <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-          Ringkasan aktivitas seluruh pegawai dan laporan ekspor timesheet.
-        </p>
-      </div>
-
       {/* Existing charts */}
       <AdminDashboardClient
         stats={{
