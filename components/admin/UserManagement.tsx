@@ -238,11 +238,87 @@ function UserModal({
     </div>
   )
 }
+// ─── Reset Password Modal ─────────────────────────────────
+function ResetPasswordModal({ user, onClose }: { user: UserRow; onClose: () => void }) {
+  const [newPw, setNewPw] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
 
-// ─── Main Component ───────────────────────────────────────
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (newPw.length < 8) { setError('Password minimal 8 karakter.'); return }
+    if (newPw !== confirm) { setError('Konfirmasi password tidak cocok.'); return }
+    setLoading(true)
+    const res = await resetUserPassword(user.id, newPw)
+    setLoading(false)
+    if (res.error) { setError(res.error); return }
+    setSuccess(true)
+    setTimeout(onClose, 1500)
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+        style={{ background: 'var(--surface-alt)', border: '1px solid var(--border-color)', borderRadius: '1.25rem', width: '100%', maxWidth: '420px', padding: '1.75rem', boxShadow: '0 32px 80px rgba(0,0,0,0.2)' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <KeyRound size={18} color="#f59e0b" />
+            </div>
+            <div>
+              <h2 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--fg)' }}>Reset Password</h2>
+              <p style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{user.full_name ?? user.npp}</p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}><X size={20} /></button>
+        </div>
+
+        {success ? (
+          <div className="alert-success" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <span>✅</span> Password berhasil direset! User wajib ganti password saat login.
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            <AnimatePresence>
+              {error && (
+                <motion.div className="alert-danger" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.85rem' }}>
+                  <AlertTriangle size={14} /> {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div>
+              <label className="label">Password Baru *</label>
+              <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
+                className="input-glass" placeholder="Min. 8 karakter" minLength={8} required />
+            </div>
+            <div>
+              <label className="label">Konfirmasi Password *</label>
+              <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
+                className="input-glass" placeholder="Ulangi password baru" required />
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+              <button type="button" onClick={onClose} className="btn btn-secondary">Batal</button>
+              <button type="submit" disabled={loading} className="btn btn-primary" style={{ background: 'rgba(245,158,11,0.9)' }}>
+                {loading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <KeyRound size={15} />}
+                {loading ? 'Mereset...' : 'Reset Password'}
+              </button>
+            </div>
+          </form>
+        )}
+      </motion.div>
+    </div>
+  )
+}
+
 export default function UserManagement({ users, projects, clusters, applications }: Props) {
   const [modalMode, setModalMode] = useState<'add' | 'edit' | null>(null)
   const [editTarget, setEditTarget] = useState<UserRow | undefined>()
+  const [resetTarget, setResetTarget] = useState<UserRow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState('')
   const [search, setSearch] = useState('')
@@ -371,6 +447,14 @@ export default function UserManagement({ users, projects, clusters, applications
                         <Pencil size={13} />
                       </button>
                       <button
+                        onClick={() => setResetTarget(u)}
+                        className="btn btn-secondary"
+                        style={{ padding: '0.375rem 0.625rem', fontSize: '0.75rem', color: '#f59e0b' }}
+                        title="Reset password"
+                      >
+                        <KeyRound size={13} />
+                      </button>
+                      <button
                         onClick={() => handleDelete(u.id)}
                         disabled={deletingId === u.id}
                         className="btn btn-danger"
@@ -390,7 +474,14 @@ export default function UserManagement({ users, projects, clusters, applications
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Reset Password Modal */}
+      <AnimatePresence>
+        {resetTarget && (
+          <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Add/Edit Modal */}
       <AnimatePresence>
         {modalMode && (
           <UserModal
