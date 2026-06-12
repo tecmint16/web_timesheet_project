@@ -61,6 +61,11 @@ npm install
 npm run dev
 ```
 
+3. Jalankan server production:
+
+```bash
+pm2 start .../web_timesheet_project/node_modules/next/dist/bin/next --name timesheet -- start -p 3020
+```
 3. Buka `http://localhost:3000`
 
 4. Konfigurasi environment Supabase pada `.env.local` sesuai kebutuhan.
